@@ -1,0 +1,153 @@
+/* =========================================================
+   ESTILOS EXCLUSIVOS: MÓDULO DE CLIENTES (DELIVERY & RESERVAS)
+   Ruta: assets/css/cliente.css
+   ========================================================= */
+
+.client-layout {
+    display: grid;
+    grid-template-columns: 1.3fr 0.7fr;
+    gap: 2rem;
+    align-items: flex-start;
+    margin-top: 1.5rem;
+}
+
+.catalog-wrapper {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.cart-sidebar {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+    position: sticky;
+    top: 1.5rem;
+}
+
+/* CARDS DE PRODUCTOS */
+.products-market-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.product-market-card {
+    background: white;
+    border: 1px solid #ebdccb;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.product-market-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(111,78,55,0.1);
+}
+
+.product-market-card .p-info {
+    padding: 1rem;
+}
+
+.product-market-card .p-tag {
+    background: #f5f1e8;
+    color: #6f4e37;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    display: inline-block;
+    margin-bottom: 0.5rem;
+}
+
+.product-market-card .p-name {
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: #3d2817;
+}
+
+.product-market-card .p-desc {
+    font-size: 0.8rem;
+    color: #7a6e65;
+    margin-top: 0.35rem;
+}
+
+.product-market-card .p-action-area {
+    padding: 1rem;
+    background: #faf8f5;
+    border-top: 1px solid #f5f1e8;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* INTERFAZ DE RESERVAS */
+.mesa-grid-selection {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 1.25rem;
+    margin: 1.5rem 0;
+}
+
+.mesa-box-card {
+    background: #faf8f5;
+    border: 2px solid #eae1d4;
+    border-radius: 0.6rem;
+    padding: 1.25rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.mesa-box-card.selected {
+    border-color: #6f4e37;
+    background: #faf6f0;
+    box-shadow: 0 4px 10px rgba(111,78,55,0.15);
+}
+
+.mesa-box-card .m-icon { font-size: 1.75rem; display: block; margin-bottom: 0.25rem; }
+.mesa-box-card .m-label { font-weight: 700; color: #3d2817; }
+.mesa-box-card .m-cap { font-size: 0.8rem; color: #a0937d; }
+
+.checkout-form-group {
+    margin-bottom: 1.25rem;
+}
+.checkout-form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    font-size: 0.9rem;
+}
+.payment-qr-container {
+    background: #f0f7ff;
+    border: 2px dashed #4a7ba7;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    text-align: center;
+    margin: 1.5rem 0;
+}
+.payment-method-selector-web {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+.method-web-card {
+    border: 2px solid #eae1d4;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    text-align: center;
+    cursor: pointer;
+    font-weight: 600;
+}
+.method-web-card.active {
+    border-color: #6f4e37;
+    background: #faf6f0;
+    color: #6f4e37;
+}
