@@ -41,13 +41,3 @@ Este sistema es una solución centralizada bajo la arquitectura **LAMP**, diseñ
 
 ---
 
-## 🛠️ Solución de Problemas Comunes (FAQ)
-
-> **"Error: Database connection failed"** > Verifica que en `config/config.php` los parámetros coincidan con tu usuario de MySQL (`root` / sin contraseña por defecto).
-
-> **"Error: 404 Not Found"** > Asegúrate de que la carpeta se llame exactamente `cafeteria_cachito` y esté dentro de `C:\xampp\htdocs\`.
-
-> **"No puedo iniciar sesión"** > Si es una instalación nueva, asegúrate de haber importado el archivo `.sql` completo; este archivo ya contiene las contraseñas encriptadas nativas (hashes) para que el login funcione al instante.
-
-> **"El botón de Confirmar Pedido no reacciona"** > Asegúrate de tener activa la extensión de JavaScript en tu navegador. El sistema utiliza mitigación de concurrencia para evitar doble pago, por lo que el botón se desactiva automáticamente tras el primer clic.
-

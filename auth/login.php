@@ -2,7 +2,13 @@
 declare(strict_types=1);
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/helpers.php';
-session_start();
+
+// Mejora de seguridad: Evitar acceso a cookies mediante JavaScript (Mitigación XSS)
+session_start([
+    'cookie_httponly' => true,
+    'cookie_secure' => isset($_SERVER['HTTPS']), // True si usas HTTPS
+    'cookie_samesite' => 'Strict'
+]);
 
 if (isset($_SESSION['role'])) {
     redirigirPorRol($_SESSION['role']);
@@ -19,25 +25,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         try {
             $pdo = getPDO();
-            // Ya no buscamos por email, buscamos por la columna `usuario`
             $stmt = $pdo->prepare('SELECT id_usuario, nombre, password_hash, rol, estado FROM usuarios WHERE usuario = :usuario LIMIT 1');
             $stmt->execute([':usuario' => $usuario]);
             $user = $stmt->fetch();
 
             if ($user && password_verify($password, $user['password_hash'])) {
                 if ($user['estado'] !== 'Activo') {
-                    $error = 'Tu cuenta está inactiva.';
+                    $error = 'Tu cuenta está inactiva. Contacta al administrador.';
                 } else {
+                    // Prevención de Fixation de Sesión
+                    session_regenerate_id(true);
+                    
                     $_SESSION['user_id'] = (int) $user['id_usuario'];
                     $_SESSION['user_name'] = $user['nombre'];
                     $_SESSION['role'] = $user['rol'];
                     redirigirPorRol($user['rol']);
                 }
             } else {
-                $error = '⚠️ Usuario o contraseña incorrectos.';
+                $error = 'Usuario o contraseña incorrectos.';
             }
         } catch (PDOException $e) {
-            $error = 'Error de servidor: ' . $e->getMessage();
+            // En producción, nunca mostrar el error real de PDO al usuario. Se registra en un log.
+            error_log('Error en Login: ' . $e->getMessage());
+            $error = 'Error interno del servidor. Inténtalo más tarde.';
         }
     }
 }
@@ -56,38 +66,57 @@ function redirigirPorRol(string $role): void {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>☕ Iniciar Sesión - Cachito</title>
-  <style>
-    :root { --color-primary: #6f4e37; --color-dark: #3d2817; font-family: sans-serif; }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #fcfbf9; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-    .card { background: white; padding: 2.5rem; border-radius: 1rem; box-shadow: 0 10px 30px rgba(61,40,23,0.12); width: 100%; max-width: 400px; }
-    .form-control { width: 100%; padding: 0.85rem; border: 1px solid #ddd; border-radius: 0.5rem; margin-bottom: 1rem; }
-    .btn { width: 100%; padding: 0.85rem; background: var(--color-primary); color: white; border: none; border-radius: 0.5rem; font-weight: bold; cursor: pointer; }
-    .btn:hover { background: #553b29; }
-    .alert { background: #fce8e6; color: #c5221f; padding: 0.85rem; border-radius: 0.5rem; margin-bottom: 1rem; text-align: center; }
-  </style>
+  <title>Iniciar Sesión | Cachito</title>
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/auth.css">
 </head>
-<body>
-  <div class="card">
-    <h2 style="text-align: center; color: var(--color-primary); margin-bottom: 0.5rem;">☕ Cachito</h2>
-    <p style="text-align: center; color: #888; margin-bottom: 1.5rem;">Ingresa a tu cuenta</p>
+<body class="auth-bg">
+
+  <main class="auth-card" role="main">
+    <div class="auth-logo" aria-label="Logotipo de la Cafetería Cachito">☕ Cachito</div>
+    <p class="auth-subtitle">Ingresa con tus credenciales</p>
     
-    <?php if ($error): ?><div class="alert"><?php echo $error; ?></div><?php endif; ?>
+    <?php if ($error): ?>
+      <div class="alert alert-danger d-flex align-items-center" role="alert" aria-live="assertive">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-triangle-fill me-2" viewBox="0 0 16 16">
+          <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+        </svg>
+        <div><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></div>
+      </div>
+    <?php endif; ?>
 
-    <form action="login.php" method="POST" id="loginForm">
-      <label style="font-weight: bold; font-size: 0.9rem;">👤 Usuario:</label>
-      <input type="text" name="usuario" class="form-control" placeholder="Ej. augusto" required>
+    <form action="login.php" method="POST" id="loginForm" class="needs-validation" novalidate>
+      
+      <div class="mb-3">
+        <label for="usuario" class="form-label">Usuario</label>
+        <div class="input-group">
+            <span class="input-group-text bg-white" aria-hidden="true">👤</span>
+            <input type="text" name="usuario" id="usuario" class="form-control" placeholder="Ej. augusto" required aria-required="true">
+            <div class="invalid-feedback">Por favor, ingresa tu usuario.</div>
+        </div>
+      </div>
 
-      <label style="font-weight: bold; font-size: 0.9rem;">🔐 Contraseña:</label>
-      <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+      <div class="mb-4">
+        <label for="password" class="form-label">Contraseña</label>
+        <div class="input-group">
+            <span class="input-group-text bg-white" aria-hidden="true">🔐</span>
+            <input type="password" name="password" id="password" class="form-control" placeholder="••••••••" required aria-required="true">
+            <button class="btn btn-outline-secondary bg-white border-start-0" type="button" id="togglePassword" aria-label="Mostrar contraseña">👁️</button>
+            <div class="invalid-feedback">Por favor, ingresa tu contraseña.</div>
+        </div>
+      </div>
 
-      <button type="submit" class="btn" id="btnEntrar">Ingresar al Sistema</button>
+      <div class="d-grid gap-2">
+        <button type="submit" class="btn btn-cachito" id="btnEntrar">Ingresar al Sistema</button>
+      </div>
     </form>
     
-    <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem;">
-      ¿Eres un cliente nuevo? <a href="register.php" style="color: var(--color-primary); font-weight: bold;">Regístrate</a>
-    </p>
-  </div>
+    <div class="auth-links text-center mt-4">
+      <p class="mb-0">¿Eres un cliente nuevo? <a href="register.php">Regístrate aquí</a></p>
+    </div>
+  </main>
+
+  <script src="../assets/js/auth.js"></script>
 </body>
 </html>

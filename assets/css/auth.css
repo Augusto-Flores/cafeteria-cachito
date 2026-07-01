@@ -1,0 +1,80 @@
+/* ============================================================================
+   CAFETERÍA CACHITO - ESTILOS DE AUTENTICACIÓN (LOGIN / REGISTRO)
+   ============================================================================ */
+
+body.auth-bg {
+    background: linear-gradient(135deg, #f5f1e8 0%, #e6dfd3 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.auth-card {
+    background: #ffffff;
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(61, 40, 23, 0.15);
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 420px;
+    border-top: 5px solid #6f4e37; /* Acento color café */
+}
+
+.auth-logo {
+    text-align: center;
+    color: #6f4e37;
+    font-weight: 700;
+    font-size: 1.8rem;
+    margin-bottom: 0.2rem;
+}
+
+.auth-subtitle {
+    text-align: center;
+    color: #a0937d;
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+}
+
+/* Adaptación de inputs para Bootstrap */
+.auth-card .form-label {
+    font-weight: 600;
+    color: #3d2817;
+    font-size: 0.9rem;
+}
+
+.auth-card .form-control:focus {
+    border-color: #6f4e37;
+    box-shadow: 0 0 0 0.25rem rgba(111, 78, 55, 0.25);
+}
+
+.btn-cachito {
+    background-color: #6f4e37;
+    color: white;
+    font-weight: bold;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.3s ease;
+}
+
+.btn-cachito:hover {
+    background-color: #553b29;
+    color: white;
+}
+
+.btn-cachito:disabled {
+    background-color: #a0937d;
+    cursor: not-allowed;
+}
+
+.auth-links a {
+    color: #6f4e37;
+    font-weight: bold;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.auth-links a:hover {
+    color: #3d2817;
+    text-decoration: underline;
+}

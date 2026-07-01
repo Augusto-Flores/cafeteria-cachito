@@ -32,9 +32,9 @@ if (isset($_GET['success'])) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard Admin - Inventario</title>
   <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/admin.css">
 </head>
 <body>
-  <!-- ENCABEZADO -->
   <header class="site-header">
     <div class="header-content">
       <div>
@@ -45,7 +45,6 @@ if (isset($_GET['success'])) {
     </div>
   </header>
 
-  <!-- CONTENIDO PRINCIPAL -->
   <div class="main-container">
     <div class="mb-3">
       <h2 style="color: var(--color-primary); font-size: 1.5rem;">📊 Inventario</h2>
@@ -107,7 +106,6 @@ if (isset($_GET['success'])) {
     </div>
   </div>
 
-  <!-- MODAL MERMA -->
   <div class="modal" id="mermaModal">
     <div class="modal-content">
       <form id="mermaForm" method="post" action="registrar_merma.php">
@@ -117,7 +115,7 @@ if (isset($_GET['success'])) {
 
         <div class="form-group">
           <label for="merma_insumo_nombre">🏷️ Insumo</label>
-          <input type="text" id="merma_insumo_nombre" class="form-control" readonly style="background: var(--color-light);">
+          <input type="text" id="merma_insumo_nombre" class="form-control" readonly>
         </div>
 
         <div class="form-group">
@@ -135,7 +133,7 @@ if (isset($_GET['success'])) {
           <input type="date" name="fecha_registro" id="fecha_registro" class="form-control" value="<?php echo date('Y-m-d'); ?>" required>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem;">
           <button type="button" class="btn btn-outline" onclick="cerrarMermaModal()">❌ Cancelar</button>
           <button type="submit" class="btn btn-primary">✅ Registrar</button>
         </div>
@@ -143,35 +141,11 @@ if (isset($_GET['success'])) {
     </div>
   </div>
 
-  <!-- PIE DE PÁGINA -->
   <footer class="site-footer">
     <p>☕ Cafetería Web © 2026 - Panel de Administración</p>
     <p style="margin-top: 0.5rem; font-size: 0.85rem;">Gestión eficiente de inventario y mermas</p>
   </footer>
 
-  <script>
-    function abrirMermaModal(insumoId, insumoNombre) {
-      document.getElementById('merma_insumo_id').value = insumoId;
-      document.getElementById('merma_insumo_nombre').value = insumoNombre;
-      document.getElementById('mermaModal').classList.add('active');
-    }
-
-    function cerrarMermaModal() {
-      document.getElementById('mermaModal').classList.remove('active');
-    }
-
-    window.addEventListener('click', function(event) {
-      const modal = document.getElementById('mermaModal');
-      if (event.target === modal) {
-        cerrarMermaModal();
-      }
-    });
-
-    document.getElementById('mermaForm').addEventListener('submit', function(event) {
-      const btn = this.querySelector('button[type="submit"]');
-      btn.disabled = true;
-      btn.textContent = '⏳ Registrando...';
-    });
-  </script>
+  <script src="../assets/js/admin.js"></script>
 </body>
 </html>
