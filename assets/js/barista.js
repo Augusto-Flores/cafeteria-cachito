@@ -139,3 +139,27 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+// --- NUEVAS FUNCIONES: FILTROS Y RESERVAS ---
+
+function filtrarCategoriaPOS(cat, btnElement) {
+    // Estilos de botones
+    document.querySelectorAll('.btn-filter').forEach(btn => btn.classList.remove('active'));
+    btnElement.classList.add('active');
+
+    // Filtrado de productos
+    document.querySelectorAll('.cat-block').forEach(block => {
+        if (cat === 'TODOS') {
+            block.style.display = 'block';
+        } else {
+            block.style.display = block.getAttribute('data-categoria') === cat ? 'block' : 'none';
+        }
+    });
+}
+
+function abrirModalReservas() {
+    document.getElementById('modal-reservas').classList.add('show');
+}
+function cerrarModalReservas() {
+    document.getElementById('modal-reservas').classList.remove('show');
+}
