@@ -122,7 +122,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label for="telefono" class="form-label">Celular</label>
                 <div class="input-group">
                     <span class="input-group-text bg-white">📱</span>
-                    <input type="text" name="telefono" id="telefono" class="form-control" placeholder="999888777" pattern="[0-9]{9}" value="<?php echo htmlspecialchars($_POST['telefono'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" required>
+                   <input type="text" name="telefono" id="telefono" class="form-control" placeholder="999888777" pattern="9[0-9]{8}" value="<?php echo htmlspecialchars($_POST['telefono'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" required>
+<div class="invalid-feedback">Debe empezar con 9 y tener 9 dígitos.</div>
                 </div>
               </div>
           </div>

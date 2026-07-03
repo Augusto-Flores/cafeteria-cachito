@@ -1,12 +1,54 @@
 /* =========================================================
    LÓGICA INTERACTIVA: MÓDULO CLIENTE (DELIVERY & RESERVAS)
-   Ruta: assets/js/cliente.js
    ========================================================= */
 
 let carritoCliente = [];
 const COSTO_DELIVERY = 1.50;
 
-// 1. Añadir producto al carrito web
+// INICIALIZACIÓN Y EVENTOS (Buena práctica de Arquitectura)
+document.addEventListener('DOMContentLoaded', () => {
+    
+    // 1. Eventos para el Catálogo (Agregar al carrito)
+    const btnsAddCart = document.querySelectorAll('.btn-add-cart');
+    btnsAddCart.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const idProducto = parseInt(btn.getAttribute('data-id'));
+            const nombreProducto = btn.getAttribute('data-nombre');
+            const precioProducto = parseFloat(btn.getAttribute('data-precio'));
+            
+            comprarProducto({ id: idProducto, nombre: nombreProducto, precio: precioProducto });
+        });
+    });
+
+    // 2. Bloqueo de doble envío por concurrencia (Formulario de Checkout)
+    const checkoutForm = document.getElementById('checkoutForm');
+    if (checkoutForm) {
+        checkoutForm.addEventListener('submit', () => {
+            const btn = document.getElementById('client-btn-submit');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = '⏳ Redirigiendo a Pasarela...';
+            }
+        });
+    }
+
+    // 3. Bloqueo de doble envío por concurrencia (Formulario de Reservas)
+    const reservaForm = document.getElementById('reservaForm');
+    if (reservaForm) {
+        reservaForm.addEventListener('submit', () => {
+            const btn = document.getElementById('btn-guardar-reserva');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = '⏳ Registrando Reserva...';
+            }
+        });
+    }
+});
+
+// ==========================================
+// FUNCIONES DEL CARRITO DE COMPRAS
+// ==========================================
+
 function comprarProducto(prod) {
     const buscado = carritoCliente.find(item => item.id === prod.id);
     if (buscado) {
@@ -17,7 +59,7 @@ function comprarProducto(prod) {
     renderizarCarritoCliente();
 }
 
-// 2. Modificar cantidades en el checkout flotante
+// Modificar cantidades (Llamado desde los botones renderizados en el DOM)
 function alterarUnidades(id, delta) {
     const buscado = carritoCliente.find(item => item.id === id);
     if (buscado) {
@@ -29,7 +71,6 @@ function alterarUnidades(id, delta) {
     renderizarCarritoCliente();
 }
 
-// 3. Renderizar y calcular montos
 function renderizarCarritoCliente() {
     const listContainer = document.getElementById('client-cart-list');
     const emptyMsg = document.getElementById('client-cart-empty');
@@ -44,6 +85,8 @@ function renderizarCarritoCliente() {
         document.getElementById('lbl-subtotal').innerText = 'S/. 0.00';
         document.getElementById('lbl-delivery').innerText = 'S/. 0.00';
         document.getElementById('lbl-total').innerText = 'S/. 0.00';
+        // Limpiar inputs ocultos por seguridad
+        document.getElementById('hid-order-json').value = '';
         return;
     }
     
@@ -58,15 +101,16 @@ function renderizarCarritoCliente() {
         
         const li = document.createElement('li');
         li.className = 'checkout-row';
+        li.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:0.85rem 0; border-bottom:1px solid #f5f1e8;';
         li.innerHTML = `
             <div style="max-width:60%;">
                 <div style="font-weight:600; font-size:0.9rem;">${item.nombre}</div>
                 <small style="color:#888;">S/. ${item.precio.toFixed(2)} c/u</small>
             </div>
             <div style="display:flex; align-items:center; gap:0.4rem;">
-                <button type="button" class="circle-qty-btn" onclick="alterarUnidades(${item.id}, -1)">-</button>
-                <span style="font-weight:700;">${item.cantidad}</span>
-                <button type="button" class="circle-qty-btn" onclick="alterarUnidades(${item.id}, 1)">+</button>
+                <button type="button" class="btn btn-outline" style="padding: 0 0.5rem;" onclick="alterarUnidades(${item.id}, -1)">-</button>
+                <span style="font-weight:700; width: 20px; text-align: center;">${item.cantidad}</span>
+                <button type="button" class="btn btn-outline" style="padding: 0 0.5rem;" onclick="alterarUnidades(${item.id}, 1)">+</button>
             </div>
         `;
         listContainer.appendChild(li);
@@ -83,7 +127,10 @@ function renderizarCarritoCliente() {
     document.getElementById('hid-total').value = totalGeneral.toFixed(2);
 }
 
-// 4. LÓGICA DE FILTRADO DE MESAS (RESERVAS)
+// ==========================================
+// FUNCIONES DE RESERVAS DE MESAS
+// ==========================================
+
 function seleccionarMesaCard(elemento, valorRaw) {
     document.getElementById('txt-mesa-select').value = valorRaw;
     
@@ -99,7 +146,7 @@ function seleccionarMesaCard(elemento, valorRaw) {
         const capacidad = parseInt(partes[1], 10);
         const costoGarantia = capacidad * 5.00; // S/. 5 por asiento
         document.getElementById('lbl-costo-reserva').innerText = `S/. ${costoGarantia.toFixed(2)}`;
-        document.getElementById('hid-costo-reserva').value = costoGarantia.toFixed(2);
+        document.getElementById('hid-costo-reserva')?.setAttribute('value', costoGarantia.toFixed(2));
         document.getElementById('box-pago-reserva').style.display = 'block';
     }
 }
@@ -115,26 +162,3 @@ function filtrarCapacidadMesas(capacidad) {
     });
 }
 
-// 5. Bloqueo de doble envío por concurrencia
-document.addEventListener('DOMContentLoaded', () => {
-    const checkoutForm = document.getElementById('checkoutForm');
-    if (checkoutForm) {
-        checkoutForm.addEventListener('submit', () => {
-            const btn = document.getElementById('client-btn-submit');
-            btn.disabled = true;
-            btn.innerText = '⏳ Redirigiendo a Pasarela...';
-        });
-    }
-
-    const reservaForm = document.getElementById('reservaForm');
-    if (reservaForm) {
-        reservaForm.addEventListener('submit', () => {
-            const btn = document.getElementById('btn-guardar-reserva');
-            if (btn) {
-                btn.disabled = true;
-                btn.innerText = '⏳ Registrando Reserva...';
-            }
-        });
-    }
-
-});

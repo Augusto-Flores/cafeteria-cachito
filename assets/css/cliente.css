@@ -150,3 +150,68 @@
     background: #faf6f0;
     color: #6f4e37;
 }
+
+/* =========================================================
+   MINIMAPA INTERACTIVO DEL SALÓN (CSS GRID)
+   ========================================================= */
+.minimap-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-auto-rows: minmax(70px, auto);
+    gap: 1rem;
+    background: #fdfbf7;
+    border: 3px solid #dcd3c4;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    position: relative;
+    margin-top: 1rem;
+}
+
+/* Elementos estructurales del local */
+.map-wall {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+    border-radius: 0.5rem;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+}
+.map-windows { grid-column: 1 / -1; height: 30px; background: #a2d2ff; color: #023e8a; border-radius: 0; margin-bottom: 0.5rem; border-bottom: 3px solid #bde0fe; }
+.map-entrance { grid-column: 1 / 3; background: #6f4e37; height: 40px; margin-top: 1rem; }
+.map-bathroom { grid-column: 4 / 5; background: #a0937d; height: 40px; margin-top: 1rem; }
+
+/* Estilos de las Mesas en el Minimapa */
+.minimap-mesa {
+    background: white;
+    border: 2px solid #eae1d4;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.2s;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 80px;
+}
+
+.minimap-mesa:hover { border-color: var(--color-primary); transform: translateY(-3px); box-shadow: 0 4px 10px rgba(111,78,55,0.1); }
+.minimap-mesa.selected { border-color: var(--color-primary); background: #faf6f0; box-shadow: 0 4px 10px rgba(111,78,55,0.2); }
+.minimap-mesa.ocupada { opacity: 0.5; cursor: not-allowed; background: #f5f1e8; border-color: #ddd; }
+
+.minimap-mesa .m-icon { font-size: 1.5rem; margin-bottom: 0.2rem; }
+.minimap-mesa .m-label { font-weight: 700; color: #3d2817; font-size: 0.9rem; }
+.minimap-mesa .m-cap { font-size: 0.75rem; color: #a0937d; }
+
+/* =========================================================
+   PASARELA DE PAGOS (RESERVAS)
+   ========================================================= */
+.method-card { border: 2px solid #eae1d4; border-radius: 0.5rem; padding: 1rem; text-align: center; cursor: pointer; transition: 0.2s; background: white; }
+.method-card.active { border-color: var(--color-primary); background: #faf6f0; color: var(--color-primary); font-weight: bold; box-shadow: 0 4px 10px rgba(111,78,55,0.1); }
+.gateway-panel { display: none; background: white; border: 1px solid #eae1d4; border-radius: 0.5rem; padding: 1.5rem; margin-top: 1rem; text-align: center; animation: fadeIn 0.3s; }
+.gateway-panel.active { display: block; }
+.cip-code { font-size: 2rem; font-weight: 900; letter-spacing: 2px; color: #d63031; margin: 1rem 0; }
