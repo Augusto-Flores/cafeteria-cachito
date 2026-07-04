@@ -57,7 +57,7 @@ $perfilIncompleto = (empty($clienteInfo['direccion']) || empty($clienteInfo['tel
     </div>
   </header>
 
-  <div class="main-container">
+  <main class="main-container">
     
     <?php if (isset($_GET['success'])): ?>
         <div class="alert alert-success d-flex align-items-center mb-4" role="alert" style="border-left: 5px solid var(--color-success);">
@@ -107,7 +107,7 @@ $perfilIncompleto = (empty($clienteInfo['direccion']) || empty($clienteInfo['tel
         <div class="cart-sidebar">
             <h3 class="h4 fw-bold" style="color:var(--color-dark); margin-bottom:1rem;">🛒 Tu Canasta</h3>
             
-            <div id="client-cart-empty" style="text-align:center; padding:3rem 0; color:#888;">
+            <div id="client-cart-empty" style="text-align:center; padding:3rem 0; color:#555;">
                 <span style="font-size:2.5rem; display:block;">🛵</span>
                 No has agregado productos.
             </div>
@@ -141,7 +141,7 @@ $perfilIncompleto = (empty($clienteInfo['direccion']) || empty($clienteInfo['tel
         </div>
 
     </div>
-  </div>
+  </main>
 
   <script src="../assets/js/cliente.js"></script>
 </body>
