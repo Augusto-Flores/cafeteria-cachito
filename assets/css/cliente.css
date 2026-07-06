@@ -2,216 +2,83 @@
    ESTILOS EXCLUSIVOS: MÓDULO DE CLIENTES 
    ========================================================= */
 
-.client-layout {
-    display: grid;
-    grid-template-columns: 1.3fr 0.7fr;
-    gap: 2rem;
-    align-items: flex-start;
-    margin-top: 1.5rem;
-}
+/* Utilidades Generales */
+.bg-cliente-main { background: #fcfbf9; }
+.color-primary { color: var(--color-primary, #6f4e37); }
+.color-dark { color: var(--color-dark, #3d2817); }
+.text-purple { color: #6f42c1; }
 
-.catalog-wrapper {
-    background: white;
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-}
+/* Navegación y Botones */
+.btn-nav-header { border-color: white; color: white; padding: 0.4rem 1rem; font-size: 0.85rem; transition: 0.3s; }
+.btn-nav-header:hover { background: white; color: var(--color-primary); }
+.btn-nav-accent { border-color: var(--color-accent); color: var(--color-accent); padding: 0.4rem 1rem; font-size: 0.85rem; }
+.btn-nav-accent:hover { background: var(--color-accent); color: white; }
+.btn-nav-danger { border-color: #ffcccc; color: #ffcccc; padding: 0.4rem 1rem; font-size: 0.85rem; }
+.btn-nav-danger:hover { background: #ffcccc; color: #d63031; }
+.btn-cachito-custom { background-color: var(--color-primary); color: white; border: none; border-radius: 0.5rem; font-weight: bold; }
+.btn-cachito-custom:hover:not(:disabled) { background-color: #5a3e2a; color: white; }
 
-.cart-sidebar {
-    background: white;
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-    position: sticky;
-    top: 1.5rem;
-}
+/* Alertas */
+.alert-custom-success { border-left: 5px solid var(--color-success); }
+.alert-custom-danger { border-left: 5px solid var(--color-danger); }
 
-/* CARDS DE PRODUCTOS */
-.products-market-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 1.5rem;
-    margin-top: 1rem;
-}
+/* Layouts Principales */
+.client-layout { display: grid; grid-template-columns: 1.3fr 0.7fr; gap: 2rem; align-items: flex-start; margin-top: 1.5rem; }
+.catalog-wrapper { background: white; border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+.cart-sidebar { background: white; border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.06); position: sticky; top: 1.5rem; }
+.profile-container { max-width: 650px; margin-top: 2.5rem; margin-inline: auto; }
+.checkout-wrapper { max-width: 600px; padding: 2.5rem; margin-inline: auto; margin-top: 3rem; }
 
-.product-market-card {
-    background: white;
-    border: 1px solid #ebdccb;
-    border-radius: 0.75rem;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
+/* Filtros de Categoría (Catálogo) */
+.cat-filters-client { display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+.cat-filters-client::-webkit-scrollbar { height: 6px; }
+.cat-filters-client::-webkit-scrollbar-thumb { background: #ebdccb; border-radius: 10px; }
+.btn-filter { background: white; border: 1px solid #ebdccb; color: var(--color-primary); font-weight: 600; padding: 0.5rem 1rem; border-radius: 2rem; cursor: pointer; white-space: nowrap; transition: 0.2s; font-size: 0.9rem; }
+.btn-filter.active, .btn-filter:hover { background: var(--color-primary); color: white; border-color: var(--color-primary); }
+.category-title { color: var(--color-primary); font-size: 1.25rem; border-bottom: 2px solid #ebdccb; padding-bottom: 0.25rem; text-transform: uppercase; font-weight: 700; margin-bottom: 1rem; margin-top: 1rem; }
 
-.product-market-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 15px rgba(111,78,55,0.1);
-}
+/* Cards de Productos */
+.products-market-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.5rem; margin-top: 1rem; }
+.product-market-card { background: white; border: 1px solid #ebdccb; border-radius: 0.75rem; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, box-shadow 0.2s; }
+.product-market-card:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(111,78,55,0.1); }
+.product-market-card .p-info { padding: 1rem; }
+.product-market-card .p-name { font-weight: 600; font-size: 1.05rem; color: #3d2817; }
+.product-market-card .p-desc { font-size: 0.8rem; color: #7a6e65; margin-top: 0.35rem; }
+.product-market-card .p-action-area { padding: 1rem; background: #faf8f5; border-top: 1px solid #f5f1e8; display: flex; justify-content: space-between; align-items: center; }
 
-.product-market-card .p-info {
-    padding: 1rem;
-}
+/* Carrito y Resumen */
+.cart-empty-msg { text-align: center; padding: 3rem 0; color: #555; }
+.cart-summary-box { background: #faf8f5; padding: 1rem; border-radius: 0.5rem; margin-top: 1.5rem; font-size: 0.85rem; border: 1px solid #ebdccb; }
+.cart-row-item { display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 0; border-bottom: 1px solid #f5f1e8; }
+.address-warning { background: #fff0f0; border: 1px solid #ffb3b3; color: #a80000; padding: 1rem; border-radius: 0.5rem; font-size: 0.85rem; font-weight: 600; text-align: center; }
+.address-info { background: #f0f7ff; border: 1px solid #bddeff; padding: 0.85rem; border-radius: 0.5rem; font-size: 0.85rem; color: #2a52be; margin-bottom: 1rem; }
+.checkout-box { background: #faf8f5; border: 1px solid #ebdccb; border-radius: 0.75rem; padding: 1.5rem; }
 
-.product-market-card .p-tag {
-    background: #f5f1e8;
-    color: #6f4e37;
-    font-size: 0.75rem;
-    font-weight: 700;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    display: inline-block;
-    margin-bottom: 0.5rem;
-}
+/* Perfil y Mapa */
+.input-readonly-custom { background: #f5f1e8; color: #777; }
+.input-map-custom { background: #faf8f5; }
+#mapa-delivery { height: 250px; border-radius: 0.5rem; border: 1px solid #dcd3c4; z-index: 1; margin-bottom: 0.5rem; }
 
-.product-market-card .p-name {
-    font-weight: 600;
-    font-size: 1.05rem;
-    color: #3d2817;
-}
-
-.product-market-card .p-desc {
-    font-size: 0.8rem;
-    color: #7a6e65;
-    margin-top: 0.35rem;
-}
-
-.product-market-card .p-action-area {
-    padding: 1rem;
-    background: #faf8f5;
-    border-top: 1px solid #f5f1e8;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-/* INTERFAZ DE RESERVAS */
-.mesa-grid-selection {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 1.25rem;
-    margin: 1.5rem 0;
-}
-
-.mesa-box-card {
-    background: #faf8f5;
-    border: 2px solid #eae1d4;
-    border-radius: 0.6rem;
-    padding: 1.25rem;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.mesa-box-card.selected {
-    border-color: #6f4e37;
-    background: #faf6f0;
-    box-shadow: 0 4px 10px rgba(111,78,55,0.15);
-}
-
-.mesa-box-card .m-icon { font-size: 1.75rem; display: block; margin-bottom: 0.25rem; }
-.mesa-box-card .m-label { font-weight: 700; color: #3d2817; }
-.mesa-box-card .m-cap { font-size: 0.8rem; color: #a0937d; }
-
-.checkout-form-group {
-    margin-bottom: 1.25rem;
-}
-.checkout-form-group label {
-    display: block;
-    font-weight: 600;
-    margin-bottom: 0.4rem;
-    font-size: 0.9rem;
-}
-.payment-qr-container {
-    background: #f0f7ff;
-    border: 2px dashed #4a7ba7;
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-    text-align: center;
-    margin: 1.5rem 0;
-}
-.payment-method-selector-web {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-}
-.method-web-card {
-    border: 2px solid #eae1d4;
-    border-radius: 0.5rem;
-    padding: 1rem;
-    text-align: center;
-    cursor: pointer;
-    font-weight: 600;
-}
-.method-web-card.active {
-    border-color: #6f4e37;
-    background: #faf6f0;
-    color: #6f4e37;
-}
-
-/* =========================================================
-   MINIMAPA INTERACTIVO DEL SALÓN (CSS GRID)
-   ========================================================= */
-.minimap-container {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    grid-auto-rows: minmax(70px, auto);
-    gap: 1rem;
-    background: #fdfbf7;
-    border: 3px solid #dcd3c4;
-    border-radius: 1rem;
-    padding: 1.5rem;
-    position: relative;
-    margin-top: 1rem;
-}
-
-/* Elementos estructurales del local */
-.map-wall {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    color: white;
-    border-radius: 0.5rem;
-    text-transform: uppercase;
-    font-size: 0.8rem;
-    letter-spacing: 2px;
-}
+/* Minimapa de Reservas */
+.minimap-container { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: minmax(70px, auto); gap: 1rem; background: #fdfbf7; border: 3px solid #dcd3c4; border-radius: 1rem; padding: 1.5rem; position: relative; margin-top: 1rem; }
+.map-wall { display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; border-radius: 0.5rem; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 2px; }
 .map-windows { grid-column: 1 / -1; height: 30px; background: #a2d2ff; color: #023e8a; border-radius: 0; margin-bottom: 0.5rem; border-bottom: 3px solid #bde0fe; }
 .map-entrance { grid-column: 1 / 3; background: #6f4e37; height: 40px; margin-top: 1rem; }
 .map-bathroom { grid-column: 4 / 5; background: #a0937d; height: 40px; margin-top: 1rem; }
 
-/* Estilos de las Mesas en el Minimapa */
-.minimap-mesa {
-    background: white;
-    border: 2px solid #eae1d4;
-    border-radius: 0.5rem;
-    padding: 0.5rem;
-    text-align: center;
-    cursor: pointer;
-    transition: 0.2s;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    min-height: 80px;
-}
-
-.minimap-mesa:hover { border-color: var(--color-primary); transform: translateY(-3px); box-shadow: 0 4px 10px rgba(111,78,55,0.1); }
+.minimap-mesa { background: white; border: 2px solid #eae1d4; border-radius: 0.5rem; padding: 0.5rem; text-align: center; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 80px; }
+.minimap-mesa:hover:not(.ocupada) { border-color: var(--color-primary); transform: translateY(-3px); box-shadow: 0 4px 10px rgba(111,78,55,0.1); }
 .minimap-mesa.selected { border-color: var(--color-primary); background: #faf6f0; box-shadow: 0 4px 10px rgba(111,78,55,0.2); }
 .minimap-mesa.ocupada { opacity: 0.5; cursor: not-allowed; background: #f5f1e8; border-color: #ddd; }
-
 .minimap-mesa .m-icon { font-size: 1.5rem; margin-bottom: 0.2rem; }
 .minimap-mesa .m-label { font-weight: 700; color: #3d2817; font-size: 0.9rem; }
 .minimap-mesa .m-cap { font-size: 0.75rem; color: #a0937d; }
 
-/* =========================================================
-   PASARELA DE PAGOS (RESERVAS)
-   ========================================================= */
+/* Pasarelas de Pago */
 .method-card { border: 2px solid #eae1d4; border-radius: 0.5rem; padding: 1rem; text-align: center; cursor: pointer; transition: 0.2s; background: white; }
 .method-card.active { border-color: var(--color-primary); background: #faf6f0; color: var(--color-primary); font-weight: bold; box-shadow: 0 4px 10px rgba(111,78,55,0.1); }
 .gateway-panel { display: none; background: white; border: 1px solid #eae1d4; border-radius: 0.5rem; padding: 1.5rem; margin-top: 1rem; text-align: center; animation: fadeIn 0.3s; }
 .gateway-panel.active { display: block; }
 .cip-code { font-size: 2rem; font-weight: 900; letter-spacing: 2px; color: #d63031; margin: 1rem 0; }
+.qr-image { width: 120px; border-radius: 0.5rem; margin-bottom: 1rem; }
+.bank-logo { opacity: 0.6; margin-bottom: 0.5rem; max-width: 100%; }
