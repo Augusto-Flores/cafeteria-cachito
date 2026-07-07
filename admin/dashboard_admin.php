@@ -1,230 +1,331 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/../config/config.php';
+
 session_start();
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Administrador') { header('Location: ../auth/login.php'); exit; }
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Administrador') {
+    header('Location: ../auth/login.php');
+    exit;
+}
 
 $pdo = getPDO();
+
+// 1. DATA ANALÍTICA: KPIs MODERNOS
+// Ventas
+$ventasHoy = (float)$pdo->query("SELECT SUM(total) FROM ventas WHERE DATE(fecha_creacion) = CURRENT_DATE")->fetchColumn();
+$ventasSemana = (float)$pdo->query("SELECT SUM(total) FROM ventas WHERE YEARWEEK(fecha_creacion, 1) = YEARWEEK(CURRENT_DATE, 1)")->fetchColumn();
+$ventasMes = (float)$pdo->query("SELECT SUM(total) FROM ventas WHERE MONTH(fecha_creacion) = MONTH(CURRENT_DATE) AND YEAR(fecha_creacion) = YEAR(CURRENT_DATE)")->fetchColumn();
+
+// Productos
+$prodTotal = (int)$pdo->query("SELECT COUNT(*) FROM productos")->fetchColumn();
+$prodActivos = (int)$pdo->query("SELECT COUNT(*) FROM productos WHERE disponible = 1")->fetchColumn();
+$prodInactivos = $prodTotal - $prodActivos;
+
+// Inventario y Solicitudes
+$insumosTotal = (int)$pdo->query("SELECT COUNT(*) FROM inventario")->fetchColumn();
+$insumosAlerta = (int)$pdo->query("SELECT COUNT(*) FROM inventario WHERE cantidad_actual <= stock_minimo")->fetchColumn();
+$solicitudesPendientes = (int)$pdo->query("SELECT COUNT(*) FROM pedidos_insumos WHERE estado = 'Pendiente'")->fetchColumn();
+
+// Mermas
+$mermasMes = (float)$pdo->query("SELECT SUM(cantidad) FROM registro_mermas WHERE MONTH(fecha_registro) = MONTH(CURRENT_DATE)")->fetchColumn();
+
+// 2. DATA PARA GRÁFICOS (JSON Export)
+$chartVentasDias = array_reverse($pdo->query("SELECT DATE(fecha_creacion) as fecha, SUM(total) as total FROM ventas GROUP BY DATE(fecha_creacion) ORDER BY fecha DESC LIMIT 7")->fetchAll(PDO::FETCH_ASSOC));
+$chartCategorias = $pdo->query("SELECT categoria, COUNT(*) as qty FROM productos GROUP BY categoria")->fetchAll(PDO::FETCH_ASSOC);
+
+$chartDataExport = json_encode([
+    'ventasDias' => $chartVentasDias,
+    'categorias' => $chartCategorias
+]);
+
+// 3. RECUPERACIÓN DE DATOS PARA TABLAS/CATÁLOGO
+$productos = $pdo->query('SELECT * FROM productos ORDER BY categoria ASC, nombre ASC')->fetchAll();
+$inventario = $pdo->query('SELECT * FROM inventario ORDER BY nombre ASC')->fetchAll();
+$mermas = $pdo->query('SELECT m.*, i.nombre as insumo_nombre FROM registro_mermas m JOIN inventario i ON m.insumo_id = i.id_insumo ORDER BY m.fecha_registro DESC LIMIT 50')->fetchAll();
+$pedidos = $pdo->query('SELECT p.*, i.nombre as insumo_nombre FROM pedidos_insumos p JOIN inventario i ON p.insumo_id = i.id_insumo ORDER BY p.id_pedido DESC')->fetchAll();
+
+// Agrupación y conteo de categorías para el catálogo
+$categoriasDisponibles = [];
+foreach ($productos as $p) {
+    if (!isset($categoriasDisponibles[$p['categoria']])) {
+        $categoriasDisponibles[$p['categoria']] = 0;
+    }
+    $categoriasDisponibles[$p['categoria']]++;
+}
+
 $msgSuccess = $_SESSION['admin_success'] ?? '';
 $msgError = $_SESSION['admin_error'] ?? '';
 unset($_SESSION['admin_success'], $_SESSION['admin_error']);
-
-// 1. DATA KPIs
-$ventasHoy = (float)$pdo->query("SELECT SUM(total) FROM ventas WHERE DATE(fecha_creacion) = CURRENT_DATE")->fetchColumn();
-$ventasMes = (float)$pdo->query("SELECT SUM(total) FROM ventas WHERE MONTH(fecha_creacion) = MONTH(CURRENT_DATE) AND YEAR(fecha_creacion) = YEAR(CURRENT_DATE)")->fetchColumn();
-$insumosAlerta = (int)$pdo->query("SELECT COUNT(*) FROM inventario WHERE cantidad_actual <= stock_minimo")->fetchColumn();
-$productosActivos = (int)$pdo->query("SELECT COUNT(*) FROM productos WHERE disponible = 1")->fetchColumn();
-
-// 2. DATA GRÁFICO VENTAS
-$ventasHistorico = array_reverse($pdo->query("SELECT DATE(fecha_creacion) as fecha, SUM(total) as total_dia FROM ventas GROUP BY DATE(fecha_creacion) ORDER BY fecha DESC LIMIT 7")->fetchAll());
-$labelsVentas = []; $dataVentas = [];
-foreach ($ventasHistorico as $row) { $labelsVentas[] = date('d/m', strtotime($row['fecha'])); $dataVentas[] = (float)$row['total_dia']; }
-
-// 3. DATA GRÁFICO CATEGORÍAS
-$catHistorico = $pdo->query("SELECT categoria, COUNT(*) as cantidad FROM productos WHERE disponible = 1 GROUP BY categoria")->fetchAll();
-$labelsCat = []; $dataCat = [];
-foreach ($catHistorico as $row) { $labelsCat[] = $row['categoria']; $dataCat[] = (int)$row['cantidad']; }
-
-// 4. DATA TABLAS
-$insumos = $pdo->query('SELECT * FROM inventario ORDER BY nombre ASC')->fetchAll();
-$productosCRUD = $pdo->query('SELECT * FROM productos ORDER BY categoria ASC, nombre ASC')->fetchAll();
-$pedidosPendientes = $pdo->query("SELECT p.id_pedido, p.cantidad, p.fecha_solicitud, i.id_insumo, i.nombre, i.unidad_medida FROM pedidos_insumos p JOIN inventario i ON p.insumo_id = i.id_insumo WHERE p.estado = 'Pendiente' ORDER BY p.fecha_solicitud ASC")->fetchAll();
 ?>
 <!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <title>Panel de Gerencia - Cachito</title>
-  <link rel="stylesheet" href="../assets/css/style.css">
+  <title>Gerencia | Cafetería Cachito</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="../assets/css/admin.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-      const chartDataVentas = { labels: <?php echo json_encode($labelsVentas); ?>, datasets: [{ label: 'Ingresos (S/.)', data: <?php echo json_encode($dataVentas); ?>, borderColor: '#c4a77d', backgroundColor: 'rgba(196, 167, 125, 0.2)', borderWidth: 3, fill: true, tension: 0.3 }] };
-      const chartDataCategorias = { labels: <?php echo json_encode($labelsCat); ?>, datasets: [{ data: <?php echo json_encode($dataCat); ?>, backgroundColor: ['#6f4e37', '#a0937d', '#c4a77d', '#e6dfd3', '#3d2817'] }] };
-  </script>
 </head>
-<body class="admin-layout">
+<body>
 
-  <aside class="admin-sidebar">
-      <div class="admin-brand">☕ CACHITO PRO</div>
-      <nav class="admin-nav">
-          <button class="nav-btn active" onclick="switchTab('sec-dashboard')">📊 Inteligencia de Negocio</button>
-          <button class="nav-btn" onclick="switchTab('sec-inventario')">📦 Inventario y Proveedores</button>
-          <button class="nav-btn" onclick="switchTab('sec-productos')">🍔 Catálogo (CRUD)</button>
-      </nav>
-      <div style="margin-top: auto;"><a href="../auth/logout.php" class="btn btn-outline" style="width:100%; border-color:#d63031; color:#fce8e6; text-align:center;">🚪 Cerrar Sesión</a></div>
-  </aside>
+  <script id="chartDataObj" type="application/json"><?php echo $chartDataExport; ?></script>
 
-  <main class="admin-content">
-      <div class="admin-header">
-          <div><h2 style="color:#3d2817; font-size:1.8rem;">Hola, <?php echo htmlspecialchars($_SESSION['user_name']); ?> 👋</h2><p style="color:#888;">Panel de control avanzado ERP.</p></div>
-      </div>
+  <div class="admin-layout">
+    
+    <aside class="admin-sidebar">
+        <div class="admin-brand">Cachito Admin</div>
+        <nav class="admin-nav">
+            <button class="nav-btn active" data-target="sec-dashboard">📊 Dashboard Analytics</button>
+            <button class="nav-btn" data-target="sec-productos">🍔 Catálogo y Precios</button>
+            <button class="nav-btn" data-target="sec-inventario">📦 Inventario (Almacén)</button>
+            <button class="nav-btn" data-target="sec-mermas">🗑️ Control de Mermas</button>
+            <button class="nav-btn" data-target="sec-pedidos">🚚 Órdenes a Proveedor</button>
+            <a href="../auth/logout.php" class="nav-btn nav-logout mt-5">🚪 Cerrar Sesión</a>
+        </nav>
+    </aside>
 
-      <?php if ($msgSuccess): ?><div class="alert alert-success"><?php echo $msgSuccess; ?></div><?php endif; ?>
-      <?php if ($msgError): ?><div class="alert alert-danger"><?php echo $msgError; ?></div><?php endif; ?>
-
-      <section id="sec-dashboard" class="admin-section active">
-          <div class="kpi-grid">
-              <div class="kpi-card"><div class="kpi-icon">💰</div><div class="kpi-data"><h4>Ingresos de Hoy</h4><div class="val">S/. <?php echo number_format($ventasHoy, 2); ?></div></div></div>
-              <div class="kpi-card"><div class="kpi-icon">📈</div><div class="kpi-data"><h4>Ventas del Mes</h4><div class="val">S/. <?php echo number_format($ventasMes, 2); ?></div></div></div>
-              <div class="kpi-card"><div class="kpi-icon">⚠️</div><div class="kpi-data"><h4>Insumos Críticos</h4><div class="val" style="color:<?php echo $insumosAlerta > 0 ? '#d63031' : '#137333'; ?>;"><?php echo $insumosAlerta; ?></div></div></div>
-              <div class="kpi-card"><div class="kpi-icon">🍔</div><div class="kpi-data"><h4>Menú Activo</h4><div class="val"><?php echo $productosActivos; ?> Platos</div></div></div>
-          </div>
-          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
-              <div><h3 style="margin-bottom:1rem; color:#3d2817;">Curva de Ingresos (7 días)</h3><div class="chart-container"><canvas id="ventasChart"></canvas></div></div>
-              <div><h3 style="margin-bottom:1rem; color:#3d2817;">Distribución de Carta</h3><div class="chart-container"><canvas id="categoriasChart"></canvas></div></div>
-          </div>
-      </section>
-
-      <section id="sec-inventario" class="admin-section">
-          <h3 style="margin-bottom:1rem; color:#3d2817; border-bottom: 2px solid #ebdccb; padding-bottom:0.5rem;">🚚 Órdenes de Compra en Tránsito (Proveedores)</h3>
-          <div class="table-responsive" style="margin-bottom: 2rem;">
-              <table class="table">
-                  <thead><tr><th>Insumo Esperado</th><th>Cantidad Solicitada</th><th>Fecha de Solicitud</th><th>Acción</th></tr></thead>
-                  <tbody>
-                      <?php if(empty($pedidosPendientes)): ?><tr><td colspan="4" style="text-align:center; color:#888;">No hay pedidos pendientes de entrega.</td></tr><?php endif; ?>
-                      <?php foreach ($pedidosPendientes as $ped): ?>
-                      <tr style="background: #fffcf2;">
-                          <td><strong><?php echo htmlspecialchars($ped['nombre']); ?></strong></td>
-                          <td><span style="color:#f7b731; font-weight:bold; font-size:1.1rem;">⏳ <?php echo $ped['cantidad'] . ' ' . $ped['unidad_medida']; ?></span></td>
-                          <td><?php echo date('d/m/Y H:i', strtotime($ped['fecha_solicitud'])); ?></td>
-                          <td>
-                              <form action="recibir_insumo.php" method="POST" style="margin:0;">
-                                  <input type="hidden" name="id_pedido" value="<?php echo $ped['id_pedido']; ?>">
-                                  <input type="hidden" name="insumo_id" value="<?php echo $ped['id_insumo']; ?>">
-                                  <input type="hidden" name="cantidad" value="<?php echo $ped['cantidad']; ?>">
-                                  <button type="submit" class="btn btn-primary" style="background:#137333; padding:0.4rem 1rem; font-size:0.8rem;">📦 ¡Ya Llegó! (Sumar Stock)</button>
-                              </form>
-                          </td>
-                      </tr>
-                      <?php endforeach; ?>
-                  </tbody>
-              </table>
-          </div>
-
-          <h3 style="margin-bottom:1rem; color:#3d2817; border-bottom: 2px solid #ebdccb; padding-bottom:0.5rem;">📦 Control de Almacén Actual</h3>
-          <div class="table-responsive">
-              <table class="table">
-                  <thead><tr><th>Insumo</th><th>Stock Actual</th><th>Unidad</th><th>Operaciones</th></tr></thead>
-                  <tbody>
-                      <?php foreach ($insumos as $i): $low = (float)$i['cantidad_actual'] <= (float)$i['stock_minimo']; ?>
-                      <tr style="<?php echo $low ? 'background: rgba(214, 48, 49, 0.05);' : ''; ?>">
-                          <td><strong><?php echo htmlspecialchars($i['nombre']); ?></strong></td>
-                          <td>
-                              <span style="font-weight:bold; color:<?php echo $low ? '#d63031' : '#3d2817'; ?>;"><?php echo $i['cantidad_actual']; ?></span>
-                              <?php if ($low) echo ' <span style="font-size:0.7rem; background:#d63031; color:white; padding:2px 5px; border-radius:3px;">¡Crítico!</span>'; ?>
-                          </td>
-                          <td><?php echo $i['unidad_medida']; ?></td>
-                          <td style="display:flex; gap:0.5rem;">
-                              <button class="btn btn-primary" style="background:#4a7ba7; padding:0.4rem 1rem; font-size:0.8rem;" onclick="abrirSolicitarModal(<?php echo $i['id_insumo']; ?>, '<?php echo htmlspecialchars($i['nombre']); ?>')">🛒 Solicitar</button>
-                              <button class="btn btn-outline" style="border-color:#d63031; color:#d63031; padding:0.4rem 1rem; font-size:0.8rem;" onclick="abrirMermaModal(<?php echo $i['id_insumo']; ?>, '<?php echo htmlspecialchars($i['nombre']); ?>')">📉 Merma</button>
-                          </td>
-                      </tr>
-                      <?php endforeach; ?>
-                  </tbody>
-              </table>
-          </div>
-      </section>
-
-      <section id="sec-productos" class="admin-section">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom: 2px solid #ebdccb; padding-bottom:0.5rem;">
-            <h3 style="color:#3d2817; margin:0;">Catálogo (Menú Web y POS)</h3>
-            <button class="btn btn-primary" onclick="abrirProductoModal()">➕ Agregar Nuevo Producto</button>
-          </div>
-          
-          <div class="table-responsive">
-              <table class="table">
-                  <thead><tr><th>Producto</th><th>Categoría</th><th>Precio</th><th>Estado</th><th>Acciones CRUD</th></tr></thead>
-                  <tbody>
-                      <?php foreach ($productosCRUD as $p): $activo = (int)$p['disponible'] === 1; ?>
-                      <tr style="<?php echo !$activo ? 'opacity: 0.6; background: #f5f5f5;' : ''; ?>">
-                          <td>
-                              <img src="<?php echo htmlspecialchars($p['imagen_url']); ?>" alt="img" style="width:40px; height:40px; object-fit:cover; border-radius:4px; vertical-align:middle; margin-right:10px;">
-                              <strong><?php echo htmlspecialchars($p['nombre']); ?></strong>
-                          </td>
-                          <td><?php echo htmlspecialchars($p['categoria']); ?></td>
-                          <td style="font-weight:bold; color:#6f4e37;">S/. <?php echo number_format((float)$p['precio'], 2); ?></td>
-                          <td><?php echo $activo ? '<span style="color:#137333; font-weight:bold;">🟢 Activo</span>' : '<span style="color:#d63031; font-weight:bold;">🔴 Oculto</span>'; ?></td>
-                          <td style="display:flex; gap:0.5rem; align-items:center;">
-                              <button class="btn btn-outline" style="padding:0.4rem 1rem; font-size:0.8rem;" 
-                                      onclick="abrirProductoModal(<?php echo $p['id_producto']; ?>, '<?php echo addslashes($p['nombre']); ?>', '<?php echo addslashes($p['categoria']); ?>', '<?php echo $p['precio']; ?>', '<?php echo addslashes($p['descripcion'] ?? ''); ?>', '<?php echo addslashes($p['imagen_url'] ?? ''); ?>')">✏️ Editar</button>
-                              
-                              <form action="toggle_producto.php" method="POST" style="margin:0;">
-                                  <input type="hidden" name="id_producto" value="<?php echo $p['id_producto']; ?>">
-                                  <input type="hidden" name="estado_actual" value="<?php echo $p['disponible']; ?>">
-                                  <button type="submit" class="btn btn-outline" style="border-color:<?php echo $activo ? '#d63031' : '#137333'; ?>; color:<?php echo $activo ? '#d63031' : '#137333'; ?>; padding:0.4rem 1rem; font-size:0.8rem;"><?php echo $activo ? '👁️ Ocultar' : '👁️ Mostrar'; ?></button>
-                              </form>
-                          </td>
-                      </tr>
-                      <?php endforeach; ?>
-                  </tbody>
-              </table>
-          </div>
-      </section>
-
-  </main>
-
-  <div class="modal" id="mermaModal">
-    <div class="modal-content">
-      <form id="mermaForm" method="post" action="registrar_merma.php">
-        <h2 style="color: #d63031; margin-bottom: 1.5rem;">📉 Registrar Merma</h2>
-        <input type="hidden" name="insumo_id" id="merma_insumo_id">
-        <div class="form-group"><label>Insumo Afectado</label><input type="text" id="merma_insumo_nombre" class="form-control" readonly></div>
-        <div class="form-group"><label>Cantidad Perdida</label><input type="number" step="0.01" min="0.01" name="cantidad" class="form-control" required></div>
-        <div class="form-group"><label>Motivo de Baja</label><input type="text" name="motivo" class="form-control" required></div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem;">
-          <button type="button" class="btn btn-outline" onclick="cerrarModales()">Cancelar</button>
-          <button type="submit" class="btn btn-primary" style="background:#d63031;">Guardar Merma</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <div class="modal" id="solicitarModal">
-    <div class="modal-content">
-      <form method="post" action="solicitar_insumo.php">
-        <h2 style="color: #4a7ba7; margin-bottom: 1.5rem;">🛒 Orden a Proveedor</h2>
-        <input type="hidden" name="insumo_id" id="sol_insumo_id">
-        <div class="form-group"><label>Insumo a Solicitar</label><input type="text" id="sol_insumo_nombre" class="form-control" readonly></div>
-        <div class="form-group"><label>Cantidad Requerida</label><input type="number" step="0.01" min="0.01" name="cantidad" class="form-control" required></div>
-        <p style="font-size:0.8rem; color:#888;">El pedido quedará en estado "Pendiente" hasta que confirmes su llegada física al local.</p>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem;">
-          <button type="button" class="btn btn-outline" onclick="cerrarModales()">Cancelar</button>
-          <button type="submit" class="btn btn-primary" style="background:#4a7ba7;">Enviar Solicitud</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <div class="modal" id="productoModal">
-    <div class="modal-content" style="max-width:600px;">
-      <form method="post" action="guardar_producto.php">
-        <h2 id="modalProdTitle" style="color: #6f4e37; margin-bottom: 1.5rem;">Gestión de Producto</h2>
-        <input type="hidden" name="id_producto" id="prod_id" value="0">
+    <main class="admin-main-content">
         
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
-            <div class="form-group"><label>Nombre del Plato/Bebida</label><input type="text" name="nombre" id="prod_nombre" class="form-control" required></div>
-            <div class="form-group">
-                <label>Categoría</label>
-                <select name="categoria" id="prod_cat" class="form-control" required>
-                    <option value="Bebidas Calientes">Bebidas Calientes</option>
-                    <option value="Bebidas Frías">Bebidas Frías</option>
-                    <option value="Postres">Postres</option>
-                    <option value="Panadería">Panadería</option>
-                    <option value="Combos">Combos (Nuevo)</option>
-                </select>
+        <?php if ($msgSuccess): ?><div class="alert alert-success fw-bold"><?php echo $msgSuccess; ?></div><?php endif; ?>
+        <?php if ($msgError): ?><div class="alert alert-danger fw-bold"><?php echo $msgError; ?></div><?php endif; ?>
+
+        <section id="sec-dashboard" class="admin-section active">
+            <h2 class="fw-bold mb-4" style="color: var(--color-primary);">📊 Rendimiento General</h2>
+            
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-icon blue">💰</div>
+                    <div class="kpi-data"><h4>Ventas (Día)</h4><div class="val">S/. <?php echo number_format($ventasHoy, 2); ?></div></div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon green">📈</div>
+                    <div class="kpi-data"><h4>Ventas (Mes)</h4><div class="val">S/. <?php echo number_format($ventasMes, 2); ?></div></div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon orange">🍔</div>
+                    <div class="kpi-data"><h4>Productos Carta</h4><div class="val"><?php echo $prodActivos; ?> <span class="text-muted fs-6">/ <?php echo $prodTotal; ?></span></div></div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon red">⚠️</div>
+                    <div class="kpi-data"><h4>Alertas Stock</h4><div class="val text-danger"><?php echo $insumosAlerta; ?> <span class="text-muted fs-6">Insumos</span></div></div>
+                </div>
             </div>
-        </div>
-        
-        <div class="form-group"><label>Precio de Venta (S/.)</label><input type="number" step="0.10" min="0.10" name="precio" id="prod_precio" class="form-control" required></div>
-        <div class="form-group"><label>Descripción Breve</label><textarea name="descripcion" id="prod_desc" class="form-control" rows="2"></textarea></div>
-        <div class="form-group"><label>Ruta de Imagen (URL o ../assets/img/...)</label><input type="text" name="imagen_url" id="prod_img" class="form-control"></div>
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem;">
-          <button type="button" class="btn btn-outline" onclick="cerrarModales()">Cancelar</button>
-          <button type="submit" class="btn btn-primary">💾 Guardar Producto</button>
-        </div>
-      </form>
+
+            <div class="chart-grid">
+                <div class="chart-container">
+                    <div class="chart-title">Ingresos de los últimos 7 días</div>
+                    <div class="chart-wrapper"><canvas id="chartVentasDias"></canvas></div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">Distribución del Catálogo</div>
+                    <div class="chart-wrapper"><canvas id="chartCategorias"></canvas></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="sec-productos" class="admin-section">
+            <h2 class="fw-bold mb-4" style="color: var(--color-primary);">🍔 Gestión de Catálogo</h2>
+            
+            <div class="toolbar-productos">
+                <div class="cat-filters">
+                    <?php foreach($categoriasDisponibles as $cat => $count): ?>
+                        <button class="cat-btn" data-cat="<?php echo htmlspecialchars($cat, ENT_QUOTES, 'UTF-8'); ?>">
+                            <?php echo htmlspecialchars($cat, ENT_QUOTES, 'UTF-8'); ?> <span class="cat-count"><?php echo $count; ?></span>
+                        </button>
+                    <?php endforeach; ?>
+                </div>
+                
+                <div class="d-flex gap-3">
+                    <input type="text" id="searchProduct" class="form-control" placeholder="🔍 Buscar producto..." style="width: 250px;">
+                    <button class="btn btn-success fw-bold btn-modal-producto">➕ Nuevo Producto</button>
+                </div>
+            </div>
+
+            <div class="product-grid" id="productGridWrapper">
+                <?php foreach ($productos as $p): 
+                    $estadoClase = $p['disponible'] ? '' : 'inactive';
+                    $badgeClase = $p['disponible'] ? 'badge-active' : 'badge-inactive';
+                    $badgeTexto = $p['disponible'] ? 'Activo' : 'Inactivo';
+                    $imgUrl = !empty($p['imagen_url']) ? $p['imagen_url'] : 'https://loremflickr.com/400/400/food';
+                    $jsonData = htmlspecialchars(json_encode([
+                        'id' => $p['id_producto'], 'nombre' => $p['nombre'], 'cat' => $p['categoria'],
+                        'precio' => $p['precio'], 'desc' => $p['descripcion'], 'img' => $p['imagen_url']
+                    ]));
+                ?>
+                    <div class="product-card product-item <?php echo $estadoClase; ?>" 
+                         data-cat="<?php echo htmlspecialchars($p['categoria'], ENT_QUOTES, 'UTF-8'); ?>" 
+                         data-name="<?php echo htmlspecialchars($p['nombre'], ENT_QUOTES, 'UTF-8'); ?>">
+                        
+                        <div class="product-status-badge <?php echo $badgeClase; ?>"><?php echo $badgeTexto; ?></div>
+                        <img src="<?php echo htmlspecialchars($imgUrl, ENT_QUOTES, 'UTF-8'); ?>" class="product-img" loading="lazy">
+                        
+                        <div class="product-info">
+                            <div class="product-title"><?php echo htmlspecialchars($p['nombre'], ENT_QUOTES, 'UTF-8'); ?></div>
+                            <div class="product-price">S/. <?php echo number_format((float)$p['precio'], 2); ?></div>
+                            
+                            <div class="product-actions">
+                                <button type="button" class="btn btn-outline-secondary btn-sm btn-modal-producto" 
+                                    data-id="<?php echo $p['id_producto']; ?>" data-nombre="<?php echo htmlspecialchars($p['nombre'], ENT_QUOTES, 'UTF-8'); ?>"
+                                    data-cat="<?php echo htmlspecialchars($p['categoria'], ENT_QUOTES, 'UTF-8'); ?>" data-precio="<?php echo (float)$p['precio']; ?>"
+                                    data-desc="<?php echo htmlspecialchars($p['descripcion'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" data-img="<?php echo htmlspecialchars($p['imagen_url'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                                    ✏️ Editar
+                                </button>
+                                
+                                <form action="toggle_producto.php" method="POST" class="m-0">
+                                    <input type="hidden" name="id_producto" value="<?php echo $p['id_producto']; ?>">
+                                    <input type="hidden" name="estado_actual" value="<?php echo $p['disponible']; ?>">
+                                    <button type="submit" class="btn <?php echo $p['disponible'] ? 'btn-outline-danger' : 'btn-outline-success'; ?> btn-sm w-100">
+                                        <?php echo $p['disponible'] ? 'Apagar' : 'Prender'; ?>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </section>
+
+        <section id="sec-inventario" class="admin-section">
+            <h2 class="fw-bold mb-4" style="color: var(--color-primary);">📦 Almacén Central</h2>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead><tr><th>ID</th><th>Insumo</th><th>Unidad</th><th>Stock Actual</th><th>Mínimo</th><th>Estado</th><th>Acciones</th></tr></thead>
+                    <tbody>
+                        <?php foreach ($inventario as $inv): 
+                            $esCritico = (float)$inv['cantidad_actual'] <= (float)$inv['stock_minimo'];
+                            $badgeColor = $esCritico ? 'bg-danger text-white' : 'bg-success text-white';
+                            $estadoText = $esCritico ? 'Crítico / Bajo' : 'Óptimo';
+                        ?>
+                            <tr>
+                                <td><?php echo $inv['id_insumo']; ?></td>
+                                <td class="fw-bold"><?php echo htmlspecialchars($inv['nombre'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars($inv['unidad_medida'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td class="fw-bold fs-5"><?php echo (float)$inv['cantidad_actual']; ?></td>
+                                <td><?php echo (float)$inv['stock_minimo']; ?></td>
+                                <td><span class="badge-stock <?php echo $badgeColor; ?>"><?php echo $estadoText; ?></span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-danger fw-bold btn-modal-merma" data-id="<?php echo $inv['id_insumo']; ?>" data-nombre="<?php echo htmlspecialchars($inv['nombre'], ENT_QUOTES, 'UTF-8'); ?>">📉 Merma</button>
+                                    <button class="btn btn-sm btn-outline-primary fw-bold btn-modal-solicitar" data-id="<?php echo $inv['id_insumo']; ?>" data-nombre="<?php echo htmlspecialchars($inv['nombre'], ENT_QUOTES, 'UTF-8'); ?>">🛒 Solicitar</button>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="sec-mermas" class="admin-section">
+            <h2 class="fw-bold mb-4" style="color: var(--color-primary);">🗑️ Registro Histórico de Mermas</h2>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead><tr><th>Fecha</th><th>Insumo</th><th>Cant. Perdida</th><th>Motivo</th></tr></thead>
+                    <tbody>
+                        <?php foreach ($mermas as $m): ?>
+                            <tr>
+                                <td><?php echo date('d/m/Y', strtotime($m['fecha_registro'])); ?></td>
+                                <td class="fw-bold text-danger"><?php echo htmlspecialchars($m['insumo_nombre'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo (float)$m['cantidad']; ?></td>
+                                <td class="text-muted"><?php echo htmlspecialchars($m['motivo'], ENT_QUOTES, 'UTF-8'); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="sec-pedidos" class="admin-section">
+            <h2 class="fw-bold mb-4" style="color: var(--color-primary);">🚚 Órdenes de Compra y Proveedores</h2>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead><tr><th>ID</th><th>Insumo Requerido</th><th>Cant.</th><th>Estado</th><th>Acciones</th></tr></thead>
+                    <tbody>
+                        <?php foreach ($pedidos as $ped): ?>
+                            <tr>
+                                <td>#<?php echo $ped['id_pedido']; ?></td>
+                                <td class="fw-bold"><?php echo htmlspecialchars($ped['insumo_nombre'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo (float)$ped['cantidad']; ?></td>
+                                <td>
+                                    <?php if ($ped['estado'] === 'Pendiente'): ?>
+                                        <span class="badge-stock bg-warning text-dark">En Tránsito</span>
+                                    <?php else: ?>
+                                        <span class="badge-stock bg-success text-white">Recibido</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if ($ped['estado'] === 'Pendiente'): ?>
+                                        <form action="recibir_insumo.php" method="POST" class="m-0">
+                                            <input type="hidden" name="id_pedido" value="<?php echo $ped['id_pedido']; ?>">
+                                            <input type="hidden" name="insumo_id" value="<?php echo $ped['insumo_id']; ?>">
+                                            <input type="hidden" name="cantidad" value="<?php echo $ped['cantidad']; ?>">
+                                            <button type="submit" class="btn btn-sm btn-success fw-bold">📦 Ingresar a Almacén</button>
+                                        </form>
+                                    <?php else: ?>
+                                        <span class="text-muted small"><?php echo date('d/m/Y H:i', strtotime($ped['fecha_recepcion'])); ?></span>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="productoModal">
+    <div class="modal-box">
+        <h3 class="modal-title" id="modalProdTitle">➕ Producto</h3>
+        <form action="guardar_producto.php" method="POST">
+            <input type="hidden" name="id_producto" id="prod_id" value="0">
+            <div class="mb-3"><label class="form-label fw-bold">Nombre del Producto</label><input type="text" name="nombre" id="prod_nombre" class="form-control" required></div>
+            <div class="row mb-3">
+                <div class="col-6"><label class="form-label fw-bold">Categoría</label>
+                    <select name="categoria" id="prod_cat" class="form-control" required>
+                        <?php foreach(array_keys($categoriasDisponibles) as $c): ?>
+                            <option value="<?php echo htmlspecialchars($c, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($c, ENT_QUOTES, 'UTF-8'); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-6"><label class="form-label fw-bold">Precio (S/.)</label><input type="number" step="0.10" min="0.10" name="precio" id="prod_precio" class="form-control" required></div>
+            </div>
+            <div class="mb-3"><label class="form-label fw-bold">Descripción Breve</label><textarea name="descripcion" id="prod_desc" class="form-control" rows="2"></textarea></div>
+            <div class="mb-3"><label class="form-label fw-bold">URL de la Imagen</label><input type="text" name="imagen_url" id="prod_img" class="form-control"></div>
+            <div class="d-flex gap-3 mt-4">
+                <button type="button" class="btn btn-outline-secondary w-50 btn-close-modal">Cancelar</button>
+                <button type="submit" class="btn btn-success w-50 fw-bold">💾 Guardar</button>
+            </div>
+        </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="mermaModal">
+    <div class="modal-box">
+        <h3 class="modal-title text-danger">📉 Descontar Merma</h3>
+        <form action="registrar_merma.php" method="POST">
+            <input type="hidden" name="insumo_id" id="merma_insumo_id">
+            <div class="mb-3"><label class="form-label fw-bold">Insumo Afectado</label><input type="text" id="merma_insumo_nombre" class="form-control bg-light" readonly></div>
+            <div class="mb-3"><label class="form-label fw-bold text-danger">Cantidad a dar de baja</label><input type="number" step="0.001" min="0.001" name="cantidad" class="form-control" required></div>
+            <div class="mb-3"><label class="form-label fw-bold">Motivo (Caducidad, Accidente, etc.)</label><input type="text" name="motivo" class="form-control" required></div>
+            <div class="d-flex gap-3 mt-4">
+                <button type="button" class="btn btn-outline-secondary w-50 btn-close-modal">Cancelar</button>
+                <button type="submit" class="btn btn-danger w-50 fw-bold">🗑️ Descontar Stock</button>
+            </div>
+        </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="solicitarModal">
+    <div class="modal-box">
+        <h3 class="modal-title text-primary">🛒 Orden de Compra</h3>
+        <form action="solicitar_insumo.php" method="POST">
+            <input type="hidden" name="insumo_id" id="sol_insumo_id">
+            <div class="mb-3"><label class="form-label fw-bold">Insumo Requerido</label><input type="text" id="sol_insumo_nombre" class="form-control bg-light" readonly></div>
+            <div class="mb-3"><label class="form-label fw-bold text-primary">Cantidad a Solicitar al Proveedor</label><input type="number" step="0.01" min="0.1" name="cantidad" class="form-control" required></div>
+            <div class="d-flex gap-3 mt-4">
+                <button type="button" class="btn btn-outline-secondary w-50 btn-close-modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary w-50 fw-bold">Enviar Solicitud</button>
+            </div>
+        </form>
     </div>
   </div>
 

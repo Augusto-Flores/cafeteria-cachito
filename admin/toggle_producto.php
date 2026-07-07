@@ -1,13 +1,9 @@
 <?php
 declare(strict_types=1);
-
 require_once __DIR__ . '/../config/config.php';
 session_start();
 
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Administrador') {
-    header('Location: ../auth/login.php');
-    exit;
-}
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Administrador') { header('Location: ../auth/login.php'); exit; }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id_producto = (int)($_POST['id_producto'] ?? 0);
@@ -19,9 +15,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo = getPDO();
             $stmt = $pdo->prepare('UPDATE productos SET disponible = ? WHERE id_producto = ?');
             $stmt->execute([$nuevo_estado, $id_producto]);
-            $_SESSION['admin_success'] = '✅ Estado del producto actualizado correctamente.';
+            $_SESSION['admin_success'] = '✅ La disponibilidad del producto ha sido actualizada al instante.';
         } catch (Exception $e) {
-            $_SESSION['admin_error'] = '❌ Error al actualizar producto.';
+            $_SESSION['admin_error'] = '❌ Ocurrió un error al cambiar la disponibilidad.';
         }
     }
 }

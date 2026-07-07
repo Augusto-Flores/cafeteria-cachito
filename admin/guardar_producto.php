@@ -15,15 +15,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $pdo = getPDO();
     if ($id === 0) {
-        // NUEVO PRODUCTO
         $stmt = $pdo->prepare("INSERT INTO productos (nombre, categoria, precio, descripcion, imagen_url, disponible) VALUES (?, ?, ?, ?, ?, 1)");
         $stmt->execute([$nombre, $categoria, $precio, $descripcion, $imagen_url]);
-        $_SESSION['admin_success'] = '✅ Nuevo producto agregado a la carta.';
+        $_SESSION['admin_success'] = '✅ Nuevo producto agregado a la carta exitosamente.';
     } else {
-        // EDITAR PRODUCTO EXISTENTE
         $stmt = $pdo->prepare("UPDATE productos SET nombre=?, categoria=?, precio=?, descripcion=?, imagen_url=? WHERE id_producto=?");
         $stmt->execute([$nombre, $categoria, $precio, $descripcion, $imagen_url, $id]);
-        $_SESSION['admin_success'] = '✅ Producto actualizado correctamente.';
+        $_SESSION['admin_success'] = '✅ Datos del producto actualizados.';
     }
 }
 header('Location: dashboard_admin.php');
