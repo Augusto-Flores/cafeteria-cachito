@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 03-07-2026 a las 22:12:49
+-- Tiempo de generación: 07-07-2026 a las 20:31:51
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -41,8 +41,8 @@ CREATE TABLE `inventario` (
 --
 
 INSERT INTO `inventario` (`id_insumo`, `nombre`, `cantidad_actual`, `unidad_medida`, `stock_minimo`, `fecha_actualizacion`) VALUES
-(1, 'Café en grano', 499.93, 'kg', 10.00, '2026-06-14 17:50:52'),
-(2, 'Leche entera', 799.52, 'L', 20.00, '2026-06-14 18:40:46'),
+(1, 'Café en grano', 499.89, 'kg', 10.00, '2026-07-07 00:07:36'),
+(2, 'Leche entera', 798.92, 'L', 20.00, '2026-07-07 00:07:36'),
 (3, 'Azúcar', 200.00, 'kg', 10.00, '2026-06-14 17:31:20'),
 (4, 'Vasos desechables', 5000.00, 'uds', 100.00, '2026-06-14 17:31:20'),
 (5, 'Tazas cerámica', 300.00, 'uds', 50.00, '2026-06-14 17:31:20'),
@@ -228,7 +228,8 @@ CREATE TABLE `reservas` (
 --
 
 INSERT INTO `reservas` (`id_reserva`, `fecha`, `hora`, `capacidad_mesa`, `cliente_id`, `mesa_id`, `estado`, `observaciones`) VALUES
-(6, '2026-07-03', '16:00:00', 2, 3, 5, 'Cumplida', '[Pago Garantía: YAPE] Cumpleaños');
+(6, '2026-07-03', '16:00:00', 2, 3, 5, 'Cumplida', '[Pago Garantía: YAPE] Cumpleaños'),
+(7, '2026-07-06', '17:00:00', 4, 3, 10, 'Cancelada', '[PagoEfectivo] ');
 
 -- --------------------------------------------------------
 
@@ -257,7 +258,7 @@ CREATE TABLE `usuarios` (
 INSERT INTO `usuarios` (`id_usuario`, `nombre`, `usuario`, `password_hash`, `rol`, `estado`, `direccion`, `latitud`, `longitud`, `telefono`, `fecha_creacion`) VALUES
 (1, 'Administrador Principal', 'admin', '$2y$10$fvNig82UrUUy1VPZ7skIwONKnlKgpWcANfx/DjJ87aRWprKmQMpKC', 'Administrador', 'Activo', 'Local Central', NULL, NULL, '999999999', '2026-06-14 17:31:20'),
 (2, 'Barista Turno Mañana', 'barista', '$2y$10$nVnIG8ZH/uQ.6zgB8ICodutsix65V.b3k9.1fkD21pueciDP3eWay', 'Barista', 'Activo', 'Local Central', NULL, NULL, '888888888', '2026-06-14 17:31:20'),
-(3, 'Augusto Flores', 'augusto', '$2y$10$VyxwGwX4LRc6HqFIUGQYk.jecIg0Y0n4CygIfPFW1I6iU9T1av0zi', 'Cliente', 'Activo', 'Jirón Pedro Helmes, Los Olivos, Lima', -11.97139438, -77.07203954, '912345678', '2026-06-14 17:31:20'),
+(3, 'Augusto Flores', 'augusto', '$2y$10$VyxwGwX4LRc6HqFIUGQYk.jecIg0Y0n4CygIfPFW1I6iU9T1av0zi', 'Cliente', 'Activo', 'Jirón El Neon, Los Olivos, Lima', -11.96613346, -77.06563711, '912345678', '2026-06-14 17:31:20'),
 (5, 'Laura Gonzales', 'Laura', '$2y$10$lN9nabzAnFzWbvQ7/4Wd1OOq2i2J2Kiv3N2tzykIZ/Uu4XuJ/0042', 'Cliente', 'Activo', 'Calle Chincha, Urbanización Mesa Redonda, El Ermitaño', -12.00305482, -77.06079841, '954781549', '2026-07-01 18:43:22');
 
 -- --------------------------------------------------------
@@ -285,7 +286,12 @@ INSERT INTO `ventas` (`id_venta`, `usuario_id`, `total`, `metodo_pago`, `fecha_c
 (4, 3, 21.00, 'Efectivo', '2026-06-14 18:38:49'),
 (5, 2, 29.00, 'Tarjeta', '2026-06-14 18:40:08'),
 (7, 5, 27.00, 'PagoEfectivo', '2026-07-03 11:17:04'),
-(8, 2, 21.00, 'Efectivo', '2026-07-03 13:00:00');
+(8, 2, 21.00, 'Efectivo', '2026-07-03 13:00:00'),
+(9, 3, 36.00, 'Yape', '2026-07-06 13:55:24'),
+(10, 2, 39.00, 'Yape', '2026-07-06 14:32:02'),
+(11, 2, 19.50, 'Efectivo', '2026-07-06 14:45:59'),
+(12, 2, 19.50, 'Efectivo', '2026-07-06 14:47:59'),
+(13, 2, 8.50, 'Tarjeta', '2026-07-07 00:07:36');
 
 --
 -- Índices para tablas volcadas
@@ -384,7 +390,7 @@ ALTER TABLE `registro_mermas`
 -- AUTO_INCREMENT de la tabla `reservas`
 --
 ALTER TABLE `reservas`
-  MODIFY `id_reserva` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id_reserva` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT de la tabla `usuarios`
@@ -396,7 +402,7 @@ ALTER TABLE `usuarios`
 -- AUTO_INCREMENT de la tabla `ventas`
 --
 ALTER TABLE `ventas`
-  MODIFY `id_venta` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id_venta` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- Restricciones para tablas volcadas
