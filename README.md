@@ -53,15 +53,14 @@ El frontend superó la auditoría de **Google Lighthouse con puntuación 100/100
 ## ⚙️ Guía de Instalación (Entorno Local)
 
 1. Instala **XAMPP** y asegúrate de que los servicios **Apache** y **MySQL** estén en ejecución.
-2. Clona este repositorio o copia la carpeta del proyecto en `C:\xampp\htdocs\CAFETERIA_CACHITO`.
+2. Clona este repositorio o copia la carpeta del proyecto en `C:\xampp\htdocs\cafeteria_cachito`.
 3. Ingresa a `http://localhost/phpmyadmin/`.
 4. Crea una nueva base de datos llamada exactamente **`cafeteria_db`** (Cotejamiento: `utf8mb4_unicode_ci`).
 5. Importa el archivo `BD/cafeteria_db.sql` incluido en el repositorio.
-6. Abre el navegador y dirígete a: `http://localhost/CAFETERIA_CACHITO/auth/login.php`
+6. Abre el navegador y dirígete a: `http://localhost:8080/cafeteria_cachito/auth/login.php`
 
 **Credenciales de Prueba:**
 * **Administrador:** Usuario: `admin` / Clave: *Admin2026@*
 * **Barista:** Usuario: `barista` / Clave: *Barista2026@*
 * **Cliente:** Usuario: `augusto` / Clave: *Cliente2026@*
-
 > **Nota:** Las contraseñas en la base de datos están fuertemente encriptadas mediante el algoritmo BCRYPT (`password_hash()`).
